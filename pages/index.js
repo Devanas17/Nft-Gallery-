@@ -1,3 +1,4 @@
+import NftCard from "@/components/NftCard";
 import Head from "next/head";
 import { useState } from "react";
 
@@ -5,20 +6,20 @@ export default function Home() {
   const [walletAddress, setWalletAddress] = useState("");
   const [collectionAddress, setCollectionAddress] = useState("");
   const [nfts, setNfts] = useState([]);
+  const [isFetchCollection, setIsFetchCollection] = useState(false);
 
   const fetchNft = async (e) => {
     let nfts;
     console.log("Fetching Nfts");
 
-    const apiKey = "Your Mainnet Apki Key";
+    const apiKey = "Your Mainnet Api Key.";
     const baseURL = `https://eth-mainnet.g.alchemy.com/nft/v2/${apiKey}/getNFTs/`;
 
+    var requestOptions = {
+      method: "GET",
+      redirect: "follow",
+    };
     if (!collectionAddress.length) {
-      var requestOptions = {
-        method: "GET",
-        redirect: "follow",
-      };
-
       const fetchURL = `${baseURL}?owner=${walletAddress}`;
 
       nfts = await fetch(fetchURL, requestOptions).then((data) => data.json());
@@ -28,8 +29,29 @@ export default function Home() {
     }
 
     if (nfts) {
-      console.log(nfts);
-      setNfts(nfts);
+      console.log(nfts.ownedNfts);
+      setNfts(nfts.ownedNfts);
+    }
+  };
+
+  const fetchNftForCollection = async () => {
+    if (collectionAddress.length) {
+      var requestOptions = {
+        method: "GET",
+        redirect: "follow",
+      };
+      const apiKey = "D4JQWCrIHfD48ZmK_U43REH2S_9089Ca";
+      const baseURL = `https://eth-mainnet.g.alchemy.com/nft/v2/${apiKey}/getNFTsForCollection/`;
+
+      const fetchURL = `${baseURL}?contractAddress=${collectionAddress}&withMetadata=true`;
+      const nfts = await fetch(fetchURL, requestOptions).then((data) =>
+        data.json()
+      );
+
+      if (nfts) {
+        setNfts(nfts?.nfts)
+        console.log("The Collection", nfts);
+      }
     }
   };
 
@@ -42,31 +64,50 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div className=" m-8 ">
-        <div className="flex flex-col space-y-4 mx-auto max-w-md">
+      <div className=" my-8 ">
+        <div className="flex flex-col justify-center items-center space-y-4 mx-auto w-[400px] ">
           <input
             type="text"
+            disabled={isFetchCollection}
             value={walletAddress}
             onChange={(e) => setWalletAddress(e.target.value)}
             placeholder="Add Wallet Address"
-            className="border outline-none"
+            className="border bg-slate-100 text-gray-700 rounded-md outline-none w-full px-2 py-1 "
           />
           <input
-            type="text"
+            type="text "
             value={collectionAddress}
             onChange={(e) => setCollectionAddress(e.target.value)}
             placeholder="Add Collection Address"
-            className="border outline-none"
+            className="border bg-slate-100 text-gray-700 rounded-md outline-none w-full px-2 py-1"
           />
           <label>
-            <input type="checkbox" className="" />
+            <input
+              type="checkbox"
+              className=""
+              value={isFetchCollection}
+              onChange={(e) => setIsFetchCollection(e.target.checked)}
+            />
+            Fetch Collection
           </label>
           <button
-            className="border w-[120px] rounded-lg text-gray-600 h-[40px] flex items-center justify-center"
-            onClick={() => fetchNft()}
+            className=" bg-blue-400 w-[120px] rounded-sm text-white h-[40px] flex items-center justify-center"
+            onClick={() => {
+              if (isFetchCollection) {
+                fetchNftForCollection();
+              } else {
+                fetchNft();
+              }
+            }}
           >
             Let's Go!
           </button>
+        </div>
+
+        <div className="px-2 max-w-7xl place-content-center mx-auto  mt-16 flex items-center flex-wrap gap-10">
+          {nfts.map((nft, i) => (
+            <NftCard key={i} nft={nft} />
+          ))}
         </div>
       </div>
     </>
